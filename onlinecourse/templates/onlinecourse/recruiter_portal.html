@@ -1,0 +1,111 @@
+{% extends 'onlinecourse/base.html' %}
+
+{% block title %}Recruiter Portal | Nexly{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    .dna-mini-chart { max-width: 180px; margin: 0 auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="mb-5 animate-fade-in text-center">
+        <h1 class="fw-extrabold display-5 mb-2">Nexly Talent Pool</h1>
+        <p class="text-muted lead">Discover pre-verified, high-performing technical candidates.</p>
+    </div>
+
+    <!-- Search / Filter -->
+    <div class="row justify-content-center mb-5 animate-fade-in" style="animation-delay: 0.1s;">
+        <div class="col-lg-6">
+            <div class="search-card border-0 shadow-sm p-4 rounded-4 bg-white">
+                <form method="GET" action="{% url 'onlinecourse:recruiter_portal' %}">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Filter by Skill/Course</label>
+                    <div class="search-input-group border bg-light">
+                        <span class="text-muted me-2">🔍</span>
+                        <input type="text" name="skill" value="{{ search_query }}" placeholder="e.g. Python, AWS, Data Science">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 ms-2">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Talent List -->
+    <div class="row g-4">
+        {% for candidate in talent_pool %}
+        <div class="col-md-6 col-lg-4 animate-fade-in" style="animation-delay: calc(0.1s * {{ forloop.counter }} + 0.2s);">
+            <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: var(--radius-lg); border-top: 5px solid var(--primary);">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                        {{ candidate.user.username|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">{{ candidate.user.first_name }} {{ candidate.user.last_name }}</h5>
+                        <p class="text-muted small mb-0">@{{ candidate.user.username }}</p>
+                    </div>
+                </div>
+
+                <div class="row text-center mb-4">
+                    <div class="col-12 mb-3">
+                        <div class="dna-mini-chart">
+                            <canvas id="dnaChart-{{ forloop.counter }}"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-6 border-end">
+                        <div class="fs-3 fw-black text-primary">{{ candidate.overall_score }}</div>
+                        <div class="small text-muted fw-bold text-uppercase">DNA Score</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="fs-3 fw-black text-success">{{ candidate.courses_passed }}</div>
+                        <div class="small text-muted fw-bold text-uppercase">Certified</div>
+                    </div>
+                </div>
+
+                <div class="mt-auto text-center">
+                    <a href="{% url 'onlinecourse:public_showcase' candidate.user.username %}" class="btn btn-outline-primary rounded-pill w-100">
+                        View Full Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="fs-1 mb-3">🕵️</div>
+            <h4 class="text-muted">No candidates found for "{{ search_query }}"</h4>
+            <p class="text-muted small">Try broadening your search criteria.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for candidate in talent_pool %}
+        new Chart(document.getElementById('dnaChart-{{ forloop.counter }}'), {
+            type: 'radar',
+            data: {
+                labels: ['Acc', 'Spd', 'Con', 'Foc', 'Mas'],
+                datasets: [{
+                    data: {{ candidate.dna_metrics|safe }},
+                    fill: true,
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderColor: 'rgb(99, 102, 241)',
+                    pointRadius: 0,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                scales: {
+                    r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false }, grid: { color: 'rgba(0,0,0,0.05)' } }
+                },
+                plugins: { legend: { display: false }, tooltip: { enabled: false } }
+            }
+        });
+        {% endfor %}
+    });
+</script>
+{% endblock %}

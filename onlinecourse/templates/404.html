@@ -1,0 +1,14 @@
+{% extends 'onlinecourse/base.html' %}
+
+{% block title %}Page Not Found | Nexly{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="py-5">
+        <div class="display-1 fw-black text-primary mb-4">404</div>
+        <h2 class="fw-extrabold mb-3">Lost in the Cloud?</h2>
+        <p class="text-muted mb-5">We couldn't find the page you're looking for. Let's get you back on track.</p>
+        <a href="{% url 'onlinecourse:index' %}" class="btn btn-primary rounded-pill px-5 py-3">Back to Homepage</a>
+    </div>
+</div>
+{% endblock %}

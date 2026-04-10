@@ -1,0 +1,243 @@
+{% extends 'onlinecourse/base.html' %}
+{% load static %}
+
+{% block title %}My Dashboard | Nexly{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="mb-5 animate-fade-in d-flex justify-content-between align-items-start">
+        <div>
+            <h1 class="fw-extrabold display-5 mb-2">
+                Welcome back, <span class="text-primary">{{ user.first_name|default:user.username }}</span> 👋
+            </h1>
+            <p class="text-muted lead">Here's your learning progress at a glance.</p>
+            <a href="{% url 'onlinecourse:public_showcase' user.username %}" class="btn btn-sm btn-light rounded-pill px-3 border fw-bold text-primary">
+                🌐 View Public Portfolio
+            </a>
+        </div>
+        <div class="text-center">
+            <div class="display-4">🔥</div>
+            <div class="fw-black text-primary" style="font-size: 1.5rem;">{{ learner.streak_count|default:0 }}</div>
+            <div class="text-muted small fw-bold text-uppercase">Day Streak</div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4 animate-fade-in" style="animation-delay: 0.1s;">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: #dbeafe; color: #2563eb;">📚</div>
+                    <div>
+                        <p class="text-muted small mb-0">Enrolled Courses</p>
+                        <h2 class="fw-bold mb-0">{{ total_courses }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 animate-fade-in" style="animation-delay: 0.2s;">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: #d1fae5; color: #059669;">🏆</div>
+                    <div>
+                        <p class="text-muted small mb-0">Courses Passed</p>
+                        <h2 class="fw-bold mb-0">{{ total_passed }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 animate-fade-in" style="animation-delay: 0.3s;">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: #fef3c7; color: #d97706;">🎯</div>
+                    <div>
+                        <p class="text-muted small mb-0">Completion Rate</p>
+                        <h2 class="fw-bold mb-0">
+                            {% if total_courses > 0 %}
+                                {% widthratio total_passed total_courses 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trophy Case -->
+    <h3 class="fw-bold mb-4 animate-fade-in" style="animation-delay: 0.3s;">🏆 Trophy Case</h3>
+    <div class="row g-4 mb-5">
+        {% for badge in badges %}
+        <div class="col-md-4 animate-fade-in" style="animation-delay: calc(0.1s * {{ forloop.counter }} + 0.3s);">
+            <div class="trophy-card {% if badge.unlocked %}unlocked{% endif %}">
+                <span class="trophy-icon">{{ badge.icon }}</span>
+                <h5 class="fw-bold mb-1">{{ badge.name }}</h5>
+                <p class="text-muted small mb-0">{{ badge.desc }}</p>
+                {% if badge.unlocked %}
+                    <span class="badge bg-success rounded-pill mt-2">Unlocked</span>
+                {% else %}
+                    <span class="badge bg-light text-muted rounded-pill mt-2">Locked</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Course Progress Section -->
+    <div class="d-flex align-items-center justify-content-between mb-4 animate-fade-in" style="animation-delay: 0.4s;">
+        <h3 class="fw-black mb-0" style="letter-spacing: -1px;">📊 My Learning DNA</h3>
+        <span class="badge bg-white text-primary border rounded-pill px-3 py-2 fw-bold shadow-sm">{{ courses_data|length }} Active Track{{ courses_data|length|pluralize }}</span>
+    </div>
+
+    <div class="row g-4 mb-5">
+        {% for data in courses_data %}
+        <div class="col-12 animate-fade-in" style="animation-delay: calc(0.1s * {{ forloop.counter }} + 0.4s);">
+            <div class="card border-0 shadow-sm overflow-hidden hover-lift-subtle" style="border-radius: 24px; background: white;">
+                <div class="row g-0">
+                    <!-- Course Image & Basic Info -->
+                    <div class="col-md-3 position-relative">
+                        <div class="h-100" style="min-height: 200px; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            {% if "default.png" not in data.course.image %}
+                                <img src="{{ MEDIA_URL }}{{ data.course.image }}" class="w-100 h-100 object-fit-cover" alt="{{ data.course.name }}">
+                            {% else %}
+                                <div class="text-center">
+                                    <div class="display-4 mb-2">📚</div>
+                                    <span class="badge bg-light text-muted fw-bold">{{ data.course.get_category_display }}</span>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Category Badge Overlay -->
+                            <div class="position-absolute top-0 start-0 m-3">
+                                <span class="badge bg-white text-primary shadow-sm rounded-pill px-3 py-2 fw-bold small text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">
+                                    {{ data.course.get_category_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Stats & Content -->
+                    <div class="col-md-6 p-4 border-end border-light">
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h4 class="fw-black mb-0" style="letter-spacing: -0.5px;">{{ data.course.name }}</h4>
+                                {% if data.passed %}
+                                    <span class="text-success fs-5" title="Course Completed">✅</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-muted small mb-0">{{ data.course.description|truncatewords:20 }}</p>
+                        </div>
+
+                        <div class="row g-4">
+                            <!-- Curriculum Mastery -->
+                            <div class="col-6">
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex justify-content-between align-items-end">
+                                        <span class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 1px;">Curriculum Progress</span>
+                                        <span class="fw-black text-primary" style="font-size: 0.9rem;">{{ data.progress_percent }}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px; border-radius: 10px; background: #f1f5f9;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" 
+                                             style="width: {{ data.progress_percent }}%; border-radius: 10px; background: linear-gradient(90deg, #6366f1, #a855f7);" 
+                                             aria-valuenow="{{ data.progress_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <span class="text-muted x-small" style="font-size: 0.65rem;">Based on lesson completion</span>
+                                </div>
+                            </div>
+
+                            <!-- Exam Mastery -->
+                            <div class="col-6">
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex justify-content-between align-items-end">
+                                        <span class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 1px;">Exam Best Score</span>
+                                        <span class="fw-black {% if data.passed %}text-success{% else %}text-muted{% endif %}" style="font-size: 0.9rem;">{{ data.best_score }}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px; border-radius: 10px; background: #f1f5f9;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ data.best_score }}%; border-radius: 10px; background: {% if data.passed %}linear-gradient(90deg, #10b981, #059669){% else %}#cbd5e1{% endif %};" 
+                                             aria-valuenow="{{ data.best_score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <span class="text-muted x-small" style="font-size: 0.65rem;">
+                                        {% if data.total_attempts > 0 %}
+                                            {{ data.total_attempts }} Attempt{{ data.total_attempts|pluralize }} logged
+                                        {% else %}
+                                            No attempts yet
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions & Additional Metrics -->
+                    <div class="col-md-3 p-4 bg-light bg-opacity-50 d-flex flex-column justify-content-center">
+                        <div class="text-center mb-4">
+                            {% if data.violations > 0 %}
+                                <div class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2 fw-bold mb-3 w-100">
+                                    ⚠️ {{ data.violations }} Security Violation{{ data.violations|pluralize }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="d-flex justify-content-center gap-3 mb-2">
+                                <div class="text-center">
+                                    <div class="text-muted x-small text-uppercase fw-bold" style="font-size: 0.6rem;">Status</div>
+                                    <div class="fw-bold small">
+                                        {% if data.passed %}
+                                            <span class="text-success">Certified</span>
+                                        {% elif data.progress_percent > 0 %}
+                                            <span class="text-primary">In Progress</span>
+                                        {% else %}
+                                            <span class="text-muted">Not Started</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="vr"></div>
+                                <div class="text-center">
+                                    <div class="text-muted x-small text-uppercase fw-bold" style="font-size: 0.6rem;">Level</div>
+                                    <div class="fw-bold small text-capitalize">{{ data.course.difficulty }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {% if data.passed %}
+                                <a href="{% url 'onlinecourse:generate_certificate' data.course.id data.latest_submission.id %}" class="btn btn-primary rounded-pill shadow-sm fw-bold">
+                                    Download Award
+                                </a>
+                            {% else %}
+                                <a href="{% url 'onlinecourse:course_details' data.course.id %}" class="btn btn-primary rounded-pill shadow-sm fw-bold">
+                                    Resume Course
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'onlinecourse:course_details' data.course.id %}" class="btn btn-outline-secondary btn-sm rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                View Syllabus
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 bg-white rounded-4 border animate-fade-in" style="animation-delay: 0.5s;">
+            <div class="display-1 mb-4">🛸</div>
+            <h4 class="fw-bold text-muted mb-4">Your dashboard is looking a bit empty!</h4>
+            <a href="{% url 'onlinecourse:index' %}" class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-lg">
+                Explore Elite Courses
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+<style>
+    .hover-lift-subtle:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.06) !important;
+    }
+    .x-small { font-size: 0.75rem; }
+    .fw-black { font-weight: 900; }
+    .object-fit-cover { object-fit: cover; }
+    .text-primary-light { color: #a5b4fc; }
+</style>
+
+{% endblock %}

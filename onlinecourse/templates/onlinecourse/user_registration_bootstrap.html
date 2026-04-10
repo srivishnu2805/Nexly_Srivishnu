@@ -1,64 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    {% load static %}
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-<body>
+{% extends 'onlinecourse/base.html' %}
 
-    <!-- Navigation bar -->
-    <nav class="navbar navbar-light bg-light">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
-            </div>
-            <ul class="nav navbar-nav navbar-right">
-                {% if user.is_authenticated %}
-                <li>
-                    <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
-                    <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
-                </li>
-                {% else %}
-                <li>
-                    <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
-                        {% csrf_token %}
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Username" name="username" >
-                            <input type="password" class="form-control" placeholder="Username" name="psw" >
-                            <button class="btn btn-primary" type="submit">Login</button>
-                            <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
-                        </div>
-                    </form>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+{% block content %}
+<div class="container" style="padding: 100px 0;">
+    <div class="auth-container" style="max-width: 500px;">
+        <div class="card fade-in">
+            <h2 style="text-align:center; font-size: 1.75rem;">Create Account.</h2>
+            <p style="text-align:center; color: var(--text-muted); margin-bottom: 32px;">Start your transformation today.</p>
 
-    <!-- Stylize Registration form -->
-    <form action="{% url 'onlinecourse:registration' %}" method="post">
-        <div class="container"> <!--Style root div with .container class -->
-            {% csrf_token %}
-            <h1>Sign Up</h1>
-            <hr>
-            <div class="form-group"> <!--Style second div with .form-group class -->
-                <label for="username"><b>User Name</b></label>
-                <input type="text" class="form-control" placeholder="Enter User Name: " name="username" required> <!--Style input with .form-control class -->
-                <label for="firstname"><b>First Name</b></label>
-                <input type="text" class="form-control" placeholder="Enter First Name: " name="firstname" required> <!--Style input with .form-control class -->
-                <label for="lastname"><b>Last Name</b></label>
-                <input type="text" class="form-control" placeholder="Enter Last Name: " name="lastname" required> <!--Style input with .form-control class -->
-                <label for="psw"><b>Password</b></label>
-                <input type="password" class="form-control" placeholder="Enter Password: " name="psw" required> <!--Style input with .form-control class -->
-                {% if message %}
-                <div class="alert alert-warning"> <!--Style the message paragraph with .alert and .alert-warning class -->
+            {% if message %}
+                <div style="background: #fef2f2; color: #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-size: 0.85rem; font-weight: 600;">
                     {{ message }}
                 </div>
-                {% endif %}
-                <button class="btn btn-primary" type="submit">Sign up</button> <!--Style button with .btn and .btn-primary class -->
-            </div>
-        </div>
-    </form>
+            {% endif %}
 
-</body>
+            <form action="{% url 'onlinecourse:registration' %}" method="post">
+                {% csrf_token %}
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="firstname" class="form-control" placeholder="Jane" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="lastname" class="form-control" placeholder="Doe" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" placeholder="choose_username" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="psw" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; padding: 14px;">Create Nexly Account</button>
+            </form>
+
+            <div style="position:relative; margin: 32px 0; text-align:center;">
+                <hr style="border:none; border-top: 1px solid var(--border-dark);">
+                <span style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background: #fff; padding: 0 16px; font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">OR</span>
+            </div>
+
+            {% load socialaccount %}
+            <a href="{% provider_login_url 'google' %}" class="btn btn-outline" style="width:100%; gap:12px; padding: 14px; border-radius: 12px; font-weight: 700; border: 1px solid var(--border-dark); transition: all 0.2s; background: white;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" style="width:20px;">
+                Continue with Google
+            </a>
+
+            <p style="text-align:center; margin-top: 32px; font-size: 0.85rem; color: var(--text-muted);">
+                Already have an account? <a href="{% url 'onlinecourse:login' %}" style="color: var(--primary); font-weight: 700; text-decoration:none;">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

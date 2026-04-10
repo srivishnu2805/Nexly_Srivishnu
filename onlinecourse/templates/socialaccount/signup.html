@@ -1,0 +1,56 @@
+{% extends "onlinecourse/base.html" %}
+
+{% block content %}
+<div class="container" style="padding: 100px 0;">
+    <div class="auth-container" style="max-width: 500px;">
+        <div class="card fade-in">
+            <h2 style="text-align:center; font-size: 1.75rem;">Welcome to Nexly!</h2>
+            <p style="text-align:center; color: var(--text-muted); margin-bottom: 32px;">You are about to sign in using your Google account.</p>
+
+            <div style="background: var(--primary-soft); padding: 16px; border-radius: 12px; margin-bottom: 32px; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.5rem;">👋</span>
+                <p style="margin-bottom: 0; font-size: 0.85rem; color: var(--primary); font-weight: 600;">
+                    We just need a few more details to set up your professional dashboard.
+                </p>
+            </div>
+
+            <form class="signup" id="signup_form" method="post" action="{% url 'socialaccount_signup' %}">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div style="background: #fef2f2; color: #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-size: 0.85rem; font-weight: 600;">
+                    Please correct the errors below.
+                </div>
+                {% endif %}
+
+                {% for field in form %}
+                <div class="form-group">
+                    <label class="form-label">{{ field.label }}</label>
+                    <input type="{{ field.field.widget.input_type|default:'text' }}" 
+                           name="{{ field.name }}" 
+                           class="form-control" 
+                           placeholder="{{ field.label }}"
+                           value="{{ field.value|default:'' }}"
+                           required>
+                    {% if field.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 4px;">{{ field.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary" style="width:100%; padding: 14px; margin-top: 16px;">
+                    Complete Registration
+                </button>
+            </form>
+
+            <p style="text-align:center; margin-top: 32px; font-size: 0.85rem; color: var(--text-muted);">
+                By continuing, you agree to Nexly's Professional Terms.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'onlinecourse/course.css' %}">
+    <title>{% block title %}Nexly | Learning Reimagined{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="container" style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+            <a href="{% url 'onlinecourse:index' %}" class="navbar-brand" style="display: flex; align-items: center; gap: 10px;">
+                <span style="background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1rem; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);">💠</span>
+                NEXLY
+            </a>
+            
+            <div style="display:flex; align-items:center; gap:8px;">
+                <a href="{% url 'onlinecourse:index' %}" class="nav-link">Explore</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'onlinecourse:enrolled_courses' %}" class="nav-link">My Courses</a>
+                    <a href="{% url 'onlinecourse:student_dashboard' %}" class="nav-link">Dashboard</a>
+                    <a href="{% url 'onlinecourse:leaderboard' %}" class="nav-link">Ranking</a>
+                    {% if user.is_staff %}
+                        <a href="{% url 'onlinecourse:recruiter_portal' %}" class="nav-link" style="color:var(--primary);">Marketplace</a>
+                    {% endif %}
+                    <a href="{% url 'onlinecourse:logout' %}" class="btn btn-outline" style="margin-left:12px; padding: 8px 16px;">Logout</a>
+                {% else %}
+                    <a href="{% url 'onlinecourse:login' %}" class="btn btn-primary rounded-pill px-4 fw-bold">Get Started</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="padding: 40px 0; text-align:center; background: #fff; border-top: 1px solid var(--border-dark);">
+        <div class="container" style="max-width: 400px; margin: 0 auto;">
+            <div style="font-weight: 900; letter-spacing: 2px; font-size: 0.8rem; color: var(--text-heading); margin-bottom: 12px;">NEXLY</div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0; line-height: 1.6;">
+                &copy; 2026 Professional Learning Ecosystem.<br>
+                Crafted for Excellence.
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

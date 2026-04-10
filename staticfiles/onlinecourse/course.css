@@ -1,0 +1,236 @@
+/* ═══════════════════════════════════════════════════════════════
+   Nexly — World-Class Minimalist Design (v7.0)
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+    --primary: #000000;      /* Sharp Black */
+    --accent: #4f46e5;       /* Professional Indigo */
+    --bg: #ffffff;           /* Pure White */
+    --surface: #fcfcfc;      /* Subtle Surface */
+    --border: #e2e8f0;       /* Crisp Border */
+    --text-main: #111827;    /* Deep Gray */
+    --text-muted: #6b7280;   /* Slate Gray */
+    --radius: 12px;          /* Modern Tight Corners */
+}
+
+/* ─── Global Reset ─────────────────────────────────────────── */
+
+* { 
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    line-height: 1.5;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ─── Typography ────────────────────────────────────────────── */
+
+h1, h2, h3, h4 {
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -0.04em;
+}
+
+.lead {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ─── Navbar ─────────────────────────────────────────────────── */
+
+.navbar {
+    height: 80px;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-decoration: none;
+    color: var(--primary);
+    letter-spacing: -1px;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    transition: opacity 0.2s;
+}
+
+.nav-link:hover { opacity: 0.7; }
+
+/* ─── Hero Section ────────────────────────────────────────────── */
+
+.hero-area {
+    padding: 120px 0 80px;
+    text-align: center;
+}
+
+.hero-title {
+    font-size: 4.5rem;
+    line-height: 1;
+    margin-bottom: 24px;
+}
+
+/* ─── Minimal Cards ─────────────────────────────────────────── */
+
+.course-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0;
+    transition: border-color 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.course-card:hover {
+    border-color: var(--primary);
+}
+
+.card-image {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #f3f4f6;
+    object-fit: cover;
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+/* ─── Buttons ─────────────────────────────────────────────── */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.btn-black {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-black:hover {
+    background: #222;
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+}
+
+.btn-outline:hover {
+    background: var(--surface);
+}
+
+/* ─── Minimal Components ───────────────────────────────────── */
+
+.chip {
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.chip.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.search-field {
+    width: 100%;
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    font-size: 1rem;
+    background: var(--surface);
+}
+
+.search-field:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: white;
+}
+
+/* ─── Modern Dock ─────────────────────────────────────────── */
+
+.dock-container {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    padding: 8px;
+    border-radius: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 2000;
+}
+
+.dock-link {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    border-radius: 14px;
+    font-size: 1.2rem;
+    transition: background 0.2s;
+}
+
+.dock-link:hover { background: rgba(255,255,255,0.1); }
+.dock-link.active { background: var(--accent); }
+
+/* ─── Animations (Ultra Subtle) ───────────────────────────── */
+
+.fade-up {
+    animation: fadeUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

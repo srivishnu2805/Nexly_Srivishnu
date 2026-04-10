@@ -1,0 +1,17 @@
+{% extends "onlinecourse/base.html" %}
+
+{% block content %}
+<div class="container" style="padding: 100px 0;">
+    <div class="auth-container" style="max-width: 500px; text-align: center;">
+        <div class="card fade-in">
+            <div style="font-size: 4rem; margin-bottom: 24px;">⚠️</div>
+            <h2 style="font-size: 1.75rem;">Authentication Error</h2>
+            <p style="color: var(--text-muted); margin-bottom: 32px;">An error occurred while trying to sign in with Google. Please try again or use a different method.</p>
+            
+            <a href="{% url 'onlinecourse:login' %}" class="btn btn-primary" style="width:100%; padding: 14px;">
+                Back to Safety
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,55 +1,136 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    {% load static %}
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-<body>
+{% extends 'onlinecourse/base.html' %}
+{% load static %}
 
- <nav class="navbar navbar-light bg-light">
-    <div class="container-fluid">
-        <div class="navbar-header">
-              <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
-        </div>
-        <ul class="nav navbar-nav navbar-right">
-            {% if user.is_authenticated %}
-            <li>
-                <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
-                <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
-            </li>
-            {% else %}
-            <li>
-                <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
-                    {% csrf_token %}
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Username" name="username" >
-                        <input type="password" class="form-control" placeholder="Username" name="psw" >
-                        <button class="btn btn-primary" type="submit">Login</button>
-                        <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
+{% block title %}Exam Results | Nexly{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-xl p-4 p-md-5 bg-white animate-fade-in" style="border-radius: var(--radius-xl);">
+                <div class="text-center mb-5">
+                    <h6 class="text-primary fw-bold text-uppercase mb-2 small" style="letter-spacing: 2px;">Exam Assessment</h6>
+                    <h1 class="fw-extrabold display-5 mb-1">{{ course.name }}</h1>
+                    <p class="text-muted">Attempt #{{ submission.attempt_number }} &bull; Completed</p>
+                </div>
+
+                <!-- Score Dashboard -->
+                <div class="row g-4 mb-5 justify-content-center">
+                    <div class="col-md-7">
+                        <div class="card p-4 p-md-5 text-center border-0 shadow-lg animate-fade-in"
+                            style="border-radius: var(--radius-lg); background: {% if passed %}linear-gradient(135deg, #10b981, #059669){% else %}linear-gradient(135deg, #f43f5e, #e11d48){% endif %}; color: white; animation-delay: 0.1s;">
+
+                            <div class="mb-3" style="font-size: 3.5rem;">{% if passed %}🎉{% else %}📝{% endif %}</div>
+                            <h5 class="fw-bold opacity-75">Final Score</h5>
+                            <h1 class="display-2 fw-black my-2">{{ total_score }}%</h1>
+                            <div class="d-inline-block px-3 py-1 rounded-pill mt-2" style="background: rgba(255,255,255,0.2); font-weight: 600;">
+                                Passing Grade: {{ course.passing_score }}%
+                            </div>
+
+                            <div class="mt-4 pt-2">
+                                {% if passed %}
+                                    <h3 class="fw-bold mb-0">PASSED</h3>
+                                    <p class="mb-0 opacity-75">Outstanding performance! Your certificate is ready.</p>
+                                {% else %}
+                                    <h3 class="fw-bold mb-0">FAILED</h3>
+                                    <p class="mb-0 opacity-75">Don't lose heart! Review the material and try again.</p>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                </form>
-            </li>
-            {% endif %}
-        </ul>
-    </div>
-</nav>
+                </div>
 
-<div class="container-fluid">
-    {% if grade > 80 %}
-    <div class="alert alert-success">
-       <!--HINT Display passed info -->
-    </div>
-        {% else %}
-        <div class="alert alert-danger">
-            <!--HINT Display failed info -->
+                {% if submission.time_taken_seconds > 0 %}
+                <div class="text-center mb-5">
+                    <span class="bg-light text-slate-700 fw-bold px-4 py-2 rounded-pill shadow-sm">
+                        ⏱️ Completion Time: {{ submission.time_taken_seconds }} seconds
+                    </span>
+                </div>
+                {% endif %}
+
+                <!-- Question Breakdown -->
+                <div class="d-flex align-items-center mb-4">
+                    <h3 class="fw-bold mb-0">Question Breakdown</h3>
+                </div>
+
+                <div class="row g-4">
+                    {% for result in results %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm p-4 bg-light animate-fade-in" style="border-radius: var(--radius-md); animation-delay: calc(0.1s * {{ forloop.counter }} + 0.2s);">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <h5 class="fw-bold text-slate-800 mb-0">
+                                    <span class="text-primary me-2">{{ forloop.counter }}.</span>
+                                    {{ result.question.question_text }}
+                                </h5>
+                                {% if result.is_correct %}
+                                    <span class="badge bg-success text-white px-3 py-1 rounded-pill fw-bold small">CORRECT</span>
+                                {% else %}
+                                    <span class="badge bg-danger text-white px-3 py-1 rounded-pill fw-bold small">INCORRECT</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="mt-4">
+                                <div class="mb-3">
+                                    <div class="text-muted small fw-bold text-uppercase mb-2">Your Selection</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for choice in result.selected_choices %}
+                                            <span class="bg-white border text-slate-700 px-3 py-2 rounded-pill small fw-medium shadow-sm">{{ choice.choice_text }}</span>
+                                        {% empty %}
+                                            <span class="text-danger small fw-bold italic">No answers selected</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                {% if not result.is_correct %}
+                                <div>
+                                    <div class="text-success small fw-bold text-uppercase mb-2">Correct Answer(s)</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for choice in result.correct_choices %}
+                                            <span class="bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill small fw-medium">{{ choice.choice_text }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- 🌟 Student Feedback & Rating (Post-Pass Only) -->
+                {% if passed and not is_rated %}
+                <div class="mt-5 pt-5 border-top animate-fade-in" style="animation-delay: 0.5s;">
+                    <div class="card bg-primary-soft border-0 p-4 p-md-5 text-center" style="border-radius: 24px;">
+                        <h3 class="fw-black mb-2">Share Your Experience</h3>
+                        <p class="text-muted mb-4">Your feedback helps us refine the Nexly elite curriculum.</p>
+                        
+                        <form action="{% url 'onlinecourse:rate_course' course.id %}" method="post">
+                            {% csrf_token %}
+                            <div class="d-flex justify-content-center gap-3 mb-4">
+                                {% for i in "54321" %}
+                                <input type="radio" name="rating" value="{{ i }}" id="rate-{{ i }}" class="btn-check" required>
+                                <label class="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center" for="rate-{{ i }}" style="width: 50px; height: 50px; font-weight: 800;">
+                                    {{ i }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                            <button type="submit" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-sm">Submit Feedback</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Final Action Buttons -->
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-5 pt-4">
+                    <a href="{% url 'onlinecourse:index' %}" class="btn btn-outline-primary btn-lg px-5 rounded-pill fw-bold">Back to Courses</a>
+                    {% if not passed %}
+                        <a href="{% url 'onlinecourse:course_details' course.id %}" class="btn btn-primary btn-lg px-5 rounded-pill fw-bold shadow-sm">Try Again</a>
+                    {% else %}
+                        <a href="{% url 'onlinecourse:generate_certificate' course.id submission.id %}" class="btn btn-success btn-lg px-5 rounded-pill fw-bold text-white shadow-sm">📜 Download Certificate</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <a class="btn btn-link text-danger" href="{% url 'onlinecourse:course_details' course.id %}">Re-test</a>
-        {% endif %}
-        <div class="card-columns-vertical mt-1">
-        <h5 class="">Exam results</h5>
-            <!--HINT Display exam results-->
-        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

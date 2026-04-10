@@ -1,65 +1,289 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% load static %}
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <meta charset="UTF-8">
-    <title>Online Courses</title>
-</head>
-<body>
-    <!-- Navigation bar -->
-    <nav class="navbar navbar-light bg-light">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                  <a class="navbar-brand" href="#">Online Course</a>
-            </div>
-            <ul class="nav navbar-nav navbar-right">
-                {% if user.is_authenticated %}
-                <li>
-                    <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
-                    <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
-                </li>
-                {% else %}
-                <li>
-                    <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
-                        {% csrf_token %}
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Username" name="username" >
-                            <input type="password" class="form-control" placeholder="Username" name="psw" >
-                            <button class="btn btn-primary" type="submit">Login</button>
-                            <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
-                        </div>
-                    </form>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+{% extends 'onlinecourse/base.html' %}
+{% load static %}
 
-    <!-- Page content -->
-    {% if course_list %}
-        <div class="container">
-            <div class="card-deck">
-                {% for course in course_list %}
-                         <div class="card" style="width: 36rem;">
-                          <img class="card-img-left" src="{{MEDIA_URL}}/{{ course.image }}" width="240px" height="240px"
-                               alt="Course image">
-                          <div class="card-body bg-light">
-                              <h5 class="card-title">{{ course.name }}, <span class="text-success">
-                                  {{ course.total_enrollment}} enrolled</span></h5>
-                            <p class="card-text">{{ course.description}}</p>
-                            <form action="{% url 'onlinecourse:enroll' course.id %}" method="post">
-                                  {% csrf_token %}
-                                  <input class="btn btn-primary"  type="submit"
-                                         value="{% if course.is_enrolled %}Enter{% else %}Enroll{% endif %} ">
-                            </form>
-                          </div>
+{% block content %}
+<!-- ─── Enhanced Hero Section (Unified) ─── -->
+<div class="hero-section" style="background: {% if user.is_authenticated %}linear-gradient(135deg, #0f172a 0%, #1e293b 100%){% else %}linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%){% endif %}; padding: 80px 0; position: relative; overflow: hidden; margin-top: -72px; border-radius: 0 0 60px 60px; min-height: 500px; display: flex; align-items: center;">
+    <div class="hero-circles">
+        <div style="position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%); top: -200px; right: -100px; border-radius: 50%;"></div>
+        <div style="position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%); bottom: -100px; left: -50px; border-radius: 50%;"></div>
+    </div>
+    
+    <div class="container position-relative" style="z-index: 2;">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-{% if user.is_authenticated %}7{% else %}12 text-center{% endif %}">
+                {% if not user.is_authenticated %}
+                    <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-4 fw-bold shadow-sm fade-in">🚀 NEXLY ELITE LEARNING</span>
+                {% endif %}
+                <h1 style="font-size: 3.5rem; line-height: 1.1; color: white; font-weight: 900; letter-spacing: -0.04em;" class="fade-in mb-3">
+                    {% if user.is_authenticated %}Welcome back, {{ user.first_name|default:user.username }}.{% else %}Master Your Craft.{% endif %}
+                </h1>
+                
+                {% if motivational_quote %}
+                <p class="fade-in mb-4" style="font-style: italic; color: rgba(255,255,255,0.7); font-size: 1rem; animation-delay: 0.05s;">
+                    "{{ motivational_quote }}"
+                </p>
+                {% endif %}
+
+                <p class="lead fade-in text-white-50" style="animation-delay: 0.1s; font-size: 1.15rem; max-width: {% if user.is_authenticated %}100%{% else %}650px; margin: 0 auto{% endif %}; margin-bottom: 40px;">
+                    Forge your professional future through precision-engineered technical mastery and industry-verified certification.
+                </p>
+
+                <!-- Interactive Search Bar -->
+                <div class="search-container fade-in shadow-lg" style="animation-delay: 0.2s; max-width: 600px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 10px; display: flex; align-items: center; {% if not user.is_authenticated %}margin: 0 auto;{% endif %}">
+                    <form method="GET" action="{% url 'onlinecourse:index' %}" style="display:contents;">
+                        <div style="padding: 0 18px; color: rgba(255,255,255,0.5); font-size: 1.2rem;">🔍</div>
+                        <input type="text" name="q" value="{{ search_query }}" class="form-control border-0 shadow-none text-white bg-transparent" placeholder="Search technical courses..." style="font-size: 1rem; font-weight: 500;">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-bold" style="background: white; color: #4f46e5; border: none; font-size: 0.9rem;">Search</button>
+                    </form>
+                </div>
+            </div>
+
+            {% if user.is_authenticated %}
+            <div class="col-lg-5">
+                <div class="fade-in" style="animation-delay: 0.3s;">
+                    <div style="background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 32px; padding: 32px;">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <div style="width: 48px; height: 48px; background: rgba(16,185,129,0.2); color: #10b981; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">⚡</div>
+                            <div>
+                                <h6 class="text-white fw-bold mb-0">Learning Engine</h6>
+                                <p class="text-white-50 small mb-0">Operational at 85% capacity</p>
+                            </div>
                         </div>
-                {% endfor %}
+                        
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div style="background: rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="fw-bold text-success small mb-1">ACCURACY</div>
+                                    <div class="text-white fw-black h4 mb-0">92%</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div style="background: rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="fw-bold text-primary-light small mb-1" style="color: #6366f1;">SPEED</div>
+                                    <div class="text-white fw-black h4 mb-0">FAST</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top border-white-10">
+                            <a href="{% url 'onlinecourse:student_dashboard' %}" class="btn btn-link text-white text-decoration-none small fw-bold p-0 d-flex align-items-center justify-content-between">
+                                View Detailed DNA Profile <span>→</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <!-- ─── Vibrant Skill Mosaic (Scrolling Train) ─── -->
+    <div class="mb-5 fade-in" style="animation-delay: 0.4s; overflow: hidden; position: relative; padding: 20px 0;">
+        <h6 class="fw-black text-uppercase tracking-wider mb-4" style="font-size: 0.85rem; color: #1e293b; letter-spacing: 2px; padding-left: 10px;">Trending Ecosystems</h6>
+        
+        <div class="skill-train-container">
+            <div class="skill-train">
+                <!-- Original Set -->
+                <a href="?category=programming" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #fffbeb;"></div>
+                    <span class="tile-icon">🐍</span>
+                    <span class="tile-label">Python Mastery</span>
+                </a>
+                <a href="?category=web" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #eff6ff;"></div>
+                    <span class="tile-icon">⚛️</span>
+                    <span class="tile-label">Full Stack JS</span>
+                </a>
+                <a href="?category=cloud" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #f5f3ff;"></div>
+                    <span class="tile-icon">☁️</span>
+                    <span class="tile-label">Cloud Ops</span>
+                </a>
+                <a href="?category=design" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #fdf2f8;"></div>
+                    <span class="tile-icon">🎨</span>
+                    <span class="tile-label">UI/UX Craft</span>
+                </a>
+                <a href="?category=data" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #f0fdf4;"></div>
+                    <span class="tile-icon">📊</span>
+                    <span class="tile-label">Data Science</span>
+                </a>
+                
+                <!-- Duplicate Set for Seamless Loop -->
+                <a href="?category=programming" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #fffbeb;"></div>
+                    <span class="tile-icon">🐍</span>
+                    <span class="tile-label">Python Mastery</span>
+                </a>
+                <a href="?category=web" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #eff6ff;"></div>
+                    <span class="tile-icon">⚛️</span>
+                    <span class="tile-label">Full Stack JS</span>
+                </a>
+                <a href="?category=cloud" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #f5f3ff;"></div>
+                    <span class="tile-icon">☁️</span>
+                    <span class="tile-label">Cloud Ops</span>
+                </a>
+                <a href="?category=design" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #fdf2f8;"></div>
+                    <span class="tile-icon">🎨</span>
+                    <span class="tile-label">UI/UX Craft</span>
+                </a>
+                <a href="?category=data" class="skill-tile-new">
+                    <div class="tile-bg" style="background: #f0fdf4;"></div>
+                    <span class="tile-icon">📊</span>
+                    <span class="tile-label">Data Science</span>
+                </a>
             </div>
         </div>
-    {% else %}
-        <p>No courses are available.</p>
-    {% endif %}
-</body>
-</html>
+    </div>
+
+<style>
+    .skill-train-container {
+        width: 100%;
+        overflow: hidden;
+        mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    }
+    .skill-train {
+        display: flex;
+        gap: 24px;
+        width: max-content;
+        animation: scrollTrain 30s linear infinite;
+    }
+    .skill-train:hover {
+        animation-play-state: paused;
+    }
+    .skill-tile-new {
+        flex: 0 0 280px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 16px;
+        border-radius: 24px;
+        text-decoration: none !important;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--border-dark);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: white;
+    }
+    @keyframes scrollTrain {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(calc(-50% - 12px)); }
+    }
+    .skill-tile-new:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+        border-color: var(--primary);
+    }
+    .skill-tile-new .tile-bg {
+        position: absolute;
+        inset: 0;
+        opacity: 0.5;
+        z-index: 0;
+    }
+    .skill-tile-new .tile-icon {
+        font-size: 2.5rem;
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 1;
+    }
+    .skill-tile-new .tile-label {
+        color: #1e293b;
+        font-weight: 800;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: relative;
+        z-index: 1;
+    }
+    .border-white-10 { border-color: rgba(255,255,255,0.1) !important; }
+</style>
+
+    <!-- ─── Dynamic Filters ─── -->
+    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between mb-5 gap-4 fade-in" style="animation-delay: 0.35s;">
+        <div class="filter-group d-flex align-items-center flex-wrap gap-2">
+            <a href="?q={{ search_query }}" class="btn {% if not selected_category %}btn-dark{% else %}btn-outline-secondary{% endif %} rounded-pill px-4 fw-bold shadow-sm">All</a>
+            {% for value, label in categories %}
+                <a href="?q={{ search_query }}&category={{ value }}" class="btn {% if selected_category == value %}btn-dark{% else %}btn-outline-secondary{% endif %} rounded-pill px-4 fw-bold shadow-sm">{{ label }}</a>
+            {% endfor %}
+        </div>
+        
+        <div class="dropdown">
+            <form id="difficultyForm" method="GET">
+                <input type="hidden" name="q" value="{{ search_query }}">
+                <input type="hidden" name="category" value="{{ selected_category }}">
+                <select name="difficulty" class="form-select border-0 shadow-sm rounded-pill px-4 fw-bold text-muted" style="min-width: 180px;" onchange="this.form.submit()">
+                    <option value="">All Levels</option>
+                    {% for value, label in difficulties %}
+                    <option value="{{ value }}" {% if selected_difficulty == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- ─── Course Grid ─── -->
+    <div class="row g-5">
+        {% for course in course_list %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm hover-lift fade-in" style="border-radius: 24px; animation-delay: calc(0.1s * {{ forloop.counter }} + 0.4s); overflow: hidden; background: white; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                <div class="position-relative overflow-hidden" style="height: 220px;">
+                    {% if "http" in course.image %}
+                        <img src="{{ course.image }}" class="w-100 h-100 object-fit-cover" alt="{{ course.name }}">
+                    {% elif "default.png" not in course.image %}
+                        <img src="{{ MEDIA_URL }}{{ course.image }}" class="w-100 h-100 object-fit-cover" alt="{{ course.name }}">
+                    {% else %}
+                        <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light text-muted display-4">📚</div>
+                    {% endif %}
+                    <div class="position-absolute top-0 end-0 m-3">
+                        <span class="badge badge-difficulty badge-{{ course.difficulty }} shadow-sm">{{ course.get_difficulty_display }}</span>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-primary fw-extrabold x-small text-uppercase tracking-wider" style="font-size: 0.75rem;">{{ course.get_category_display }}</span>
+                        <span class="text-muted small">👥 {{ course.total_enrollment }}</span>
+                    </div>
+                    
+                    <h3 class="fw-bold mb-3 h5">{{ course.name }}</h3>
+                    <p class="text-muted small mb-4 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.6;">{{ course.description }}</p>
+                    
+                    <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="text-warning">★</span>
+                            <span class="fw-bold small">{{ course.avg_rating|default:"0.0" }}</span>
+                        </div>
+                        <a href="{% url 'onlinecourse:course_details' course.id %}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm-hover" style="font-size: 0.85rem;">Learn Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <h3 class="text-muted">No courses found matching your criteria.</h3>
+            <a href="?" class="btn btn-primary rounded-pill mt-3">Reset Filters</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .hover-lift:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+    }
+    .tracking-wider { letter-spacing: 1px; }
+    .shadow-sm-hover:hover { box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+    .object-fit-cover { object-fit: cover; }
+</style>
+{% endblock %}
+

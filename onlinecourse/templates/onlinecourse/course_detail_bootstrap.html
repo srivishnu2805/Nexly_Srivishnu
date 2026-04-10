@@ -1,56 +1,253 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-     {% load static %}
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <meta charset="UTF-8">
-</head>
+{% extends 'onlinecourse/base.html' %}
+{% load static %}
 
-<body>
-    <!-- Navigation bar -->
-    <nav class="navbar navbar-light bg-light">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                  <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
+{% block title %}{{ course.name }} | Nexly{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-5">
+        <div class="col-lg-8 animate-fade-in">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'warning' }} alert-dismissible fade show shadow-sm rounded-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Course Header -->
+            <div class="mb-4">
+                <span class="badge badge-difficulty badge-{{ course.difficulty }} me-2">{{ course.get_difficulty_display }}</span>
+                <span class="text-primary small fw-bold text-uppercase">{{ course.get_category_display }}</span>
             </div>
-            <ul class="nav navbar-nav navbar-right">
-                {% if user.is_authenticated %}
-                <li>
-                    <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
-                    <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
-                </li>
-                {% else %}
-                <li>
-                    <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
-                        {% csrf_token %}
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Username" name="username" >
-                            <input type="password" class="form-control" placeholder="Username" name="psw" >
-                            <button class="btn btn-primary" type="submit">Login</button>
-                            <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
-                        </div>
-                    </form>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+            <h1 class="fw-extrabold mb-4 display-5">{{ course.name }}</h1>
+            <p class="lead text-muted mb-5">{{ course.description }}</p>
 
-    <!-- Page content -->
-    <div class="container-fluid">
-            <h2>{{ course.name }}</h2>
-            <div class="card-columns-vertical">
+            <!-- Lessons Accordion -->
+            <div class="d-flex align-items-center mb-4">
+                <h3 class="fw-bold mb-0">📚 Course Curriculum</h3>
+                <span class="badge bg-light text-primary ms-3 rounded-pill">{{ course.lesson_set.count }} Lessons</span>
+            </div>
+            
+            <div class="accordion border-0 mb-5" id="lessonAccordion">
                 {% for lesson in course.lesson_set.all %}
-                    <div class="card mt-1">
-                        <div class="card-header"><h5>Lesson {{lesson.order|add:1}}: {{lesson.title}}</h5></div>
-                        <div class="card-body">{{lesson.content}}</div>
+                    <div class="accordion-item border-0 mb-3 overflow-hidden rounded-3 shadow-sm">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button bg-white fw-bold {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ lesson.id }}">
+                                <span class="text-primary me-3">{{ forloop.counter|stringformat:"02d" }}</span>
+                                {{ lesson.title }}
+                            </button>
+                        </h2>
+                        <div id="collapse{{ lesson.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#lessonAccordion">
+                            <div class="accordion-body bg-white text-muted">
+                                {{ lesson.content|linebreaks }}
+                                <div class="mt-4 text-end">
+                                    {% if lesson.id in completed_lesson_ids %}
+                                        <button class="btn btn-sm btn-success text-white rounded-pill px-4" disabled>
+                                            ✅ Completed
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-success rounded-pill px-4 mark-complete-btn" data-lesson-id="{{ lesson.id }}" data-course-id="{{ course.id }}">
+                                            ✓ Mark as Completed
+                                        </button>
+                                    {% endif %}
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                {% empty %}
+                    <div class="bg-white p-4 rounded-3 border text-center text-muted">
+                        No lessons available yet.
                     </div>
                 {% endfor %}
             </div>
-            <!-- Course detail template changes go here -->
+
+            <!-- Past Attempts -->
+            {% if past_attempts %}
+            <div class="mt-5">
+                <h3 class="fw-bold mb-4">📝 Your Journey</h3>
+                <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: var(--radius-md);">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="bg-light">
+                                <tr class="small text-muted text-uppercase fw-bold">
+                                    <th class="ps-4 py-3">Attempt</th>
+                                    <th>Score</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in past_attempts %}
+                                <tr>
+                                    <td class="ps-4 fw-bold">#{{ attempt.attempt_number }}</td>
+                                    <td>
+                                        <div class="fw-bold {% if attempt.passed %}text-success{% else %}text-danger{% endif %}">
+                                            {{ attempt.score }}%
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if attempt.passed %}
+                                        <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">PASSED</span>
+                                        {% else %}
+                                        <span class="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill">FAILED</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex gap-2 justify-content-end">
+                                            <a href="{% url 'onlinecourse:show_exam_result' course.id attempt.id %}" class="btn btn-sm btn-light rounded-pill px-3">Review</a>
+                                            {% if attempt.passed %}
+                                            <a href="{% url 'onlinecourse:generate_certificate' course.id attempt.id %}" class="btn btn-sm btn-success rounded-pill px-3 text-white">Certificate</a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4 animate-fade-in" style="animation-delay: 0.2s;">
+            <div class="card border-0 shadow-lg p-4 sticky-top" style="top: 100px; border-radius: var(--radius-lg);">
+                <div class="card-img-wrapper rounded-4 mb-4">
+                    {% if "http" in course.image %}
+                        <img src="{{ course.image }}" class="img-fluid" alt="{{ course.name }}">
+                    {% elif course.image != "course_images/default.png" and course.image != "" %}
+                        <img src="{{ MEDIA_URL }}{{ course.image }}" class="img-fluid" alt="{{ course.name }}">
+                    {% else %}
+                        {# High-quality Category Placeholders #}
+                        {% if course.category == 'programming' %}
+                            <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80" class="img-fluid" alt="Programming">
+                        {% elif course.category == 'web' %}
+                            <img src="https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=800&q=80" class="img-fluid" alt="Web Dev">
+                        {% elif course.category == 'data' %}
+                            <img src="https://images.unsplash.com/photo-1551288049-bbda38a5f85d?auto=format&fit=crop&w=800&q=80" class="img-fluid" alt="Data Science">
+                        {% elif course.category == 'cloud' %}
+                            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80" class="img-fluid" alt="Cloud">
+                        {% elif course.category == 'design' %}
+                            <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80" class="img-fluid" alt="Design">
+                        {% else %}
+                            <img src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80" class="img-fluid" alt="Learning">
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="text-muted small fw-bold">
+                        👥 {{ course.total_enrollment }} enrolled
+                    </div>
+                    <div class="text-muted small fw-bold">
+                        🎯 {{ course.passing_score }}% to pass
+                    </div>
+                </div>
+
+                    {% if user.is_authenticated and is_enrolled %}
+                        <!-- New Curriculum Progress Section -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted fw-bold text-uppercase small" style="letter-spacing: 0.5px;">Curriculum Progress</span>
+                                <span class="fw-black text-primary" id="overallProgressText">{{ progress_percent }}%</span>
+                            </div>
+                            <div class="progress" style="height: 10px; border-radius: 20px; background: #f1f5f9;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" id="overallProgressBar" role="progressbar" 
+                                     style="width: {{ progress_percent }}%; border-radius: 20px; background: linear-gradient(90deg, #6366f1, #a855f7);" 
+                                     aria-valuenow="{{ progress_percent }}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-success-subtle text-success p-3 rounded-3 text-center mb-3 fw-bold small">
+                            ✅ Enrolled & Active
+                        </div>
+                        <a href="{% url 'onlinecourse:take_exam' course.id %}" class="btn btn-primary w-100 py-3 rounded-pill mb-3 shadow-sm fw-bold">
+                            Take Final Exam
+                        </a>
+                        
+                        <div class="d-grid gap-2 mb-3">
+                            <a href="{% url 'onlinecourse:generate_study_guide' course.id %}" class="btn btn-outline-success rounded-pill fw-bold py-2">
+                                📑 Download Study Guide
+                            </a>
+                            <a href="{% url 'onlinecourse:course_leaderboard' course.id %}" class="btn btn-outline-primary w-100 rounded-pill py-2">🏆 Leaderboard</a>
+                        </div>
+                    {% elif user.is_authenticated %}
+                    <a class="btn btn-primary w-100 py-3 rounded-pill" href="{% url 'onlinecourse:enroll' course.id %}">Enroll Now</a>
+                {% else %}
+                    <a class="btn btn-primary w-100 py-3 rounded-pill" href="{% url 'onlinecourse:login' %}">Login to Enroll</a>
+                {% endif %}
+            </div>
+        </div>
     </div>
-</body>
-</html>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if user.is_authenticated and is_enrolled %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mark Lesson as Complete
+        let completedLessonsCount = {{ completed_lesson_ids|length }};
+        const totalLessonsCount = {{ course.lesson_set.count }};
+
+        document.querySelectorAll('.mark-complete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const lessonId = this.dataset.lessonId;
+                const courseId = this.dataset.courseId;
+                
+                fetch(`/onlinecourse/${courseId}/lesson/${lessonId}/complete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        this.textContent = '✅ Completed';
+                        this.classList.remove('btn-outline-success');
+                        this.classList.add('btn-success', 'text-white');
+                        this.disabled = true;
+
+                        // Update Progress Bar
+                        completedLessonsCount++;
+                        const newPercent = Math.round((completedLessonsCount / totalLessonsCount) * 100);
+                        const progressBar = document.getElementById('overallProgressBar');
+                        const progressText = document.getElementById('overallProgressText');
+                        
+                        if (progressBar) {
+                            progressBar.style.width = newPercent + '%';
+                            progressBar.setAttribute('aria-valuenow', newPercent);
+                        }
+                        if (progressText) {
+                            progressText.textContent = newPercent + '%';
+                        }
+                    }
+                });
+            });
+        });
+    });
+</script>
+<style>
+    .btn-check:checked + .btn-outline-light {
+        background-color: var(--primary-light) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+    }
+    .custom-choice-item .btn {
+        transition: all 0.2s ease;
+    }
+    .custom-choice-item .btn:hover {
+        background-color: var(--slate-50);
+        border-color: var(--slate-300);
+    }
+</style>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends 'onlinecourse/base.html' %}
+
+{% block title %}Verify Certificate | Nexly{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 animate-fade-in">
+            <div class="card border-0 shadow-xl overflow-hidden" style="border-radius: var(--radius-xl);">
+                <div class="bg-primary p-5 text-center text-white">
+                    <div class="fs-1 mb-3">✅</div>
+                    <h2 class="fw-extrabold mb-2">Certificate Verified</h2>
+                    <p class="opacity-75 mb-0">Official Nexly Skill Certification</p>
+                </div>
+                <div class="card-body p-5">
+                    <div class="row g-5">
+                        <!-- Student Info -->
+                        <div class="col-md-6 border-end">
+                            <div class="mb-5">
+                                <h5 class="fw-extrabold text-primary mb-4">Certification Details</h5>
+                                <div class="mb-4">
+                                    <label class="text-muted small fw-bold text-uppercase d-block">Student Name</label>
+                                    <h3 class="fw-bold">{{ full_name }}</h3>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="text-muted small fw-bold text-uppercase d-block">Course Completed</label>
+                                    <h4 class="fw-bold">{{ course.name }}</h4>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <label class="text-muted small fw-bold text-uppercase d-block">Issue Date</label>
+                                        <p class="fw-bold mb-0">{{ date_completed }}</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="text-muted small fw-bold text-uppercase d-block">Final Score</label>
+                                        <p class="fw-bold text-success mb-0">{{ submission.score }}%</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-light p-4 rounded-4">
+                                <label class="text-muted small fw-bold text-uppercase d-block mb-2">Certificate Authenticity</label>
+                                <p class="small text-muted mb-3">This unique ID confirms that the recipient has successfully met all the requirements of the course curriculum.</p>
+                                <code class="bg-white p-2 rounded small d-block border">NEXLY-VERIFY-{{ submission.verification_uuid }}</code>
+                            </div>
+                        </div>
+
+                        <!-- Skill DNA Chart -->
+                        <div class="col-md-6 text-center">
+                            <h5 class="fw-extrabold text-primary mb-4">Skill DNA Profile</h5>
+                            <div style="max-width: 350px; margin: 0 auto;">
+                                <canvas id="dnaChart" aria-label="Skill DNA Radar Chart" role="img"></canvas>
+                            </div>
+                            <p class="small text-muted mt-4">
+                                This radar chart represents the student's relative performance in speed, accuracy, focus, consistency, and mastery compared to platform standards.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-5 pt-4 text-center border-top">
+                        <a href="{% url 'onlinecourse:index' %}" class="btn btn-outline-primary rounded-pill px-5">Visit Platform</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const ctx = document.getElementById('dnaChart');
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Accuracy', 'Speed', 'Consistency', 'Focus', 'Mastery'],
+            datasets: [{
+                label: 'Candidate Performance',
+                data: {{ dna_data|safe }},
+                fill: true,
+                backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                borderColor: 'rgb(99, 102, 241)',
+                pointBackgroundColor: 'rgb(99, 102, 241)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(99, 102, 241)'
+            }]
+        },
+        options: {
+            elements: { line: { borderWidth: 3 } },
+            scales: {
+                r: {
+                    angleLines: { display: true },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: { display: false }
+                }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "onlinecourse/base.html" %}
+
+{% block content %}
+<div class="container" style="padding: 100px 0;">
+    <div class="auth-container" style="max-width: 500px; text-align: center;">
+        <div class="card fade-in">
+            <div style="font-size: 4rem; margin-bottom: 24px;">🔄</div>
+            <h2 style="font-size: 1.75rem;">Login Cancelled</h2>
+            <p style="color: var(--text-muted); margin-bottom: 32px;">It looks like you cancelled the Google sign-in process.</p>
+            
+            <a href="{% url 'onlinecourse:login' %}" class="btn btn-primary" style="width:100%; padding: 14px;">
+                Return to Login
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

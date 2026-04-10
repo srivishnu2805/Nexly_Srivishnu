@@ -1,0 +1,260 @@
+{% extends 'onlinecourse/base.html' %}
+{% load static %}
+
+{% block title %}Secure Assessment | {{ course.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    body { background-color: #f8fafc; }
+    /* Fullscreen Overlay */
+    #startOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.98);
+        backdrop-filter: blur(10px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+    }
+    .proctor-cam-fixed {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 200px;
+        height: 150px;
+        background: #000;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 3px solid var(--primary);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        z-index: 1000;
+    }
+    #videoElement { width: 100%; height: 100%; object-fit: cover; }
+    .proctor-status-tag {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: rgba(220, 38, 38, 0.8);
+        color: white;
+        font-size: 0.6rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 800;
+    }
+    .exam-container { max-width: 800px; margin: 40px auto; padding-bottom: 100px; }
+    .custom-choice-item .btn { transition: all 0.2s ease; text-align: left; padding: 16px; border-radius: 12px; }
+    .btn-check:checked + .btn-outline-primary {
+        background-color: var(--primary-soft) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 🛡️ Secure Start Overlay -->
+<div id="startOverlay">
+    <div class="p-5" style="max-width: 500px;">
+        <div class="display-1 mb-4">🔒</div>
+        <h2 class="fw-black mb-3">Initialize Secure Environment</h2>
+        <p class="text-white-50 mb-5">Click below to enter the proctored assessment. Your browser will enter Fullscreen mode. Exiting fullscreen or switching tabs will be flagged as a violation.</p>
+        <button id="initializeBtn" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow-lg">Start Proctored Exam</button>
+    </div>
+</div>
+
+<div class="exam-container animate-fade-in" id="mainExamContent" style="visibility: hidden;">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h6 class="text-primary fw-bold text-uppercase mb-2 small" style="letter-spacing: 2px;">Nexly Final Exam</h6>
+        <h1 class="fw-extrabold">{{ course.name }}</h1>
+        
+        {% if course.exam_time_limit > 0 %}
+        <div class="d-inline-flex align-items-center bg-dark text-white px-4 py-2 rounded-pill fw-bold mt-3" id="examTimer">
+            <span class="me-2">⏱️</span>
+            <span id="timerDisplay">{{ course.exam_time_limit }}:00</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Proctor Cam -->
+    <div class="proctor-cam-fixed" id="proctorCam">
+        <div class="proctor-status-tag">🔴 REC | PROCTOR ACTIVE</div>
+        <video id="videoElement" autoplay playsinline muted></video>
+    </div>
+
+    <form id="question-form" action="{% url 'onlinecourse:submit' course.id %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="time_taken" id="timeTakenField" value="0">
+
+        {% for question in shuffled_questions %}
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 bg-white">
+                <h5 class="fw-bold mb-4">
+                    <span class="text-primary me-2">{{ forloop.counter }}.</span>
+                    {{ question.question_text }}
+                </h5>
+                <div class="d-flex flex-column gap-3">
+                    {% for choice in question.choice_set.all %}
+                        <div class="form-check custom-choice-item p-0">
+                            <input type="checkbox" name="choice_{{choice.id}}" class="btn-check" id="choice_{{choice.id}}" value="{{choice.id}}" autocomplete="off">
+                            <label class="btn btn-outline-light w-100 border text-dark" for="choice_{{choice.id}}">
+                                {{ choice.choice_text }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+        
+        <div class="text-center mt-5">
+            <button class="btn btn-primary btn-lg rounded-pill px-5 py-3 shadow-lg" type="submit" id="submitExamBtn">
+                Submit Final Assessment
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const startOverlay = document.getElementById('startOverlay');
+        const initializeBtn = document.getElementById('initializeBtn');
+        const mainContent = document.getElementById('mainExamContent');
+        const video = document.getElementById('videoElement');
+        const form = document.getElementById('question-form');
+        
+        let isExamActive = false;
+        let examStartTime = null;
+        let timerInterval = null;
+
+        {% if course.exam_time_limit > 0 %}
+        const TIME_LIMIT = {{ course.exam_time_limit }} * 60; 
+        {% else %}
+        const TIME_LIMIT = 0;
+        {% endif %}
+
+        // 🚀 Initialize Exam
+        initializeBtn.addEventListener('click', function() {
+            // Request Fullscreen
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {
+                    alert("Fullscreen is required to take this exam.");
+                    return;
+                });
+            }
+
+            // Start Proctor Cam
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+                    video.srcObject = stream;
+                    startOverlay.style.display = 'none';
+                    mainContent.style.visibility = 'visible';
+                    isExamActive = true;
+                    examStartTime = Date.now();
+                    startTimer();
+                }).catch(function(err) {
+                    alert("Camera access is mandatory for this proctored exam. Please enable it.");
+                });
+            }
+        });
+
+        function startTimer() {
+            if (TIME_LIMIT > 0) {
+                let remaining = TIME_LIMIT;
+                const timerDisplay = document.getElementById('timerDisplay');
+                const timerEl = document.getElementById('examTimer');
+
+                timerInterval = setInterval(() => {
+                    remaining--;
+                    const mins = Math.floor(remaining / 60);
+                    const secs = remaining % 60;
+                    timerDisplay.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+                    if (remaining <= 60) {
+                        timerEl.classList.replace('bg-dark', 'bg-danger');
+                    }
+
+                    if (remaining <= 0) {
+                        clearInterval(timerInterval);
+                        submitExam();
+                    }
+                }, 1000);
+            }
+        }
+
+        function submitExam() {
+            if (examStartTime) {
+                const elapsed = Math.floor((Date.now() - examStartTime) / 1000);
+                document.getElementById('timeTakenField').value = elapsed;
+            }
+            isExamActive = false;
+            form.submit();
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitExam();
+        });
+
+        // 🛡️ SECURITY ENFORCEMENT
+        
+        // Prevent Right Click
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Prevent accidental exit
+        window.onbeforeunload = function() {
+            if (isExamActive) return "Are you sure you want to leave? Your progress will be lost and a violation will be logged.";
+        };
+
+        function logViolation(type) {
+            if (!isExamActive) return;
+            console.log("Violation detected: " + type);
+            
+            fetch("{% url 'onlinecourse:log_violation' course.id %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            });
+            
+            alert("⚠️ VIOLATION DETECTED: " + type + ". This event has been recorded.");
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && isExamActive) {
+                logViolation("Exited Fullscreen Mode");
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isExamActive) {
+                logViolation("Tab/Window Switch Detected");
+            }
+        });
+
+        // 💾 Local Autosave
+        const saveInterval = setInterval(() => {
+            if (!isExamActive) {
+                clearInterval(saveInterval);
+                return;
+            }
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => { data[key] = value; });
+            localStorage.setItem(`exam_autosave_{{course.id}}`, JSON.stringify(data));
+        }, 5000);
+
+        // Load autosave
+        const saved = localStorage.getItem(`exam_autosave_{{course.id}}`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.keys(data).forEach(key => {
+                const el = document.querySelector(`[name="${key}"][value="${data[key]}"]`);
+                if (el) el.checked = true;
+            });
+        }
+    });
+</script>
+{% endblock %}
